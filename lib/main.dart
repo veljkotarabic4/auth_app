@@ -14,7 +14,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Auth App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData.light(), // svetla tema
+      darkTheme: ThemeData.dark(), // tamna tema
+      themeMode: ThemeMode.system, // koristi sistemsku temu (automatski)
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),

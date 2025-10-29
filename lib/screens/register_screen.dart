@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
-  // Public static lista korisnika za login screen
+  // Javna statička lista korisnika — koristi se u login ekranu
   static final List<Map<String, String>> users = [];
 
   @override
@@ -18,16 +18,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _register() {
     if (_formKey.currentState!.validate()) {
+      // Dodaj korisnika u listu
       RegisterScreen.users.add({
         'email': _emailController.text,
         'password': _passwordController.text,
       });
 
+      // Prikazi poruku o uspešnoj registraciji
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Registracija uspešna!")),
       );
 
-      Navigator.pushReplacementNamed(context, '/login');
+      // Prebaci korisnika na početni (home) ekran
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
 
@@ -36,10 +39,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Center(
         child: Card(
-          elevation: 5,
+          elevation: 6,
           margin: const EdgeInsets.all(16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -49,7 +53,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   const Text(
                     "Register",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
@@ -57,7 +64,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: "Email",
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     validator: (value) =>
                         value!.isEmpty ? "Unesi email" : null,
@@ -69,7 +77,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: "Password",
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     validator: (value) =>
                         value!.length < 6 ? "Minimum 6 karaktera" : null,
@@ -81,7 +90,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: "Confirm Password",
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     validator: (value) => value != _passwordController.text
                         ? "Šifre se ne poklapaju"
@@ -93,7 +103,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size.fromHeight(50),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Text("Register"),
                   ),

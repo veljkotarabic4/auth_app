@@ -1,16 +1,16 @@
-# auth_app
+# Note&Do App
 
-A new Flutter project.
+Jednostavna Flutter aplikacija sa login i register ekranima i glavnom početnom stranicom.
 
-## Getting Started
+## Funkcionalnosti
+- Registracija i prijava korisnika
+- Čuvanje korisničkih podataka lokalno (Shared Preferences)
+- Automatsko prijavljivanje pri sledećem pokretanju
+- To-Do lista i Notes sekcija
+- Provera internet konekcije (Connectivity Plus)
+- API integracija (prikaz podataka iz otvorenog API-ja)
+- State management korišćenjem Provider-a
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+© 2025 Veljko Tarabić

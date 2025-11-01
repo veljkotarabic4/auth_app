@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,78 +13,76 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  String _apiMessage = "Učitavam podatke...";
-
-  @override
-  void initState() {
-    super.initState();
-    _loadApiData();
-  }
-
-  Future<void> _loadApiData() async {
-    final result = await ApiService.fetchTodoTitle();
-    setState(() {
-      _apiMessage = result ?? "Došlo je do greške prilikom učitavanja API podataka.";
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     List<Widget> pages = [
-      TodoPage(isDarkMode: Theme.of(context).brightness == Brightness.dark),
-      NotesPage(isDarkMode: Theme.of(context).brightness == Brightness.dark),
+      TodoPage(isDark: isDark),
+      NotesPage(isDark: isDark),
     ];
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: isDark ? Colors.grey[900] : Colors.deepPurple,
         title: const Text('Note & Do'),
         centerTitle: true,
+        elevation: 4,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded),
             tooltip: "Odjavi se",
             onPressed: () async {
-              await auth.logout();
-              if (context.mounted) {
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Odjava"),
+                  content: const Text("Da li ste sigurni da želite da se odjavite?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text("Otkaži"),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text("Odjavi se"),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldLogout == true && context.mounted) {
+                final auth = Provider.of<AuthProvider>(context, listen: false);
+                await auth.logout();
                 Navigator.pushReplacementNamed(context, '/login');
               }
             },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[850]
-                : Colors.grey[100],
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            child: Text(
-              "API poruka: $_apiMessage",
-              style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.black,
-              ),
-            ),
-          ),
-          Expanded(child: pages[_selectedIndex]),
-        ],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: pages[_selectedIndex],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.deepPurple,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+        unselectedItemColor: isDark ? Colors.white54 : Colors.black54,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.checklist),
+            icon: Icon(Icons.checklist_rounded),
             label: 'To-Do',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.note),
+            icon: Icon(Icons.note_alt_rounded),
             label: 'Notes',
           ),
         ],
@@ -96,8 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ================== TO-DO PAGE ==================
 class TodoPage extends StatefulWidget {
-  final bool isDarkMode;
-  const TodoPage({super.key, required this.isDarkMode});
+  final bool isDark;
+  const TodoPage({super.key, required this.isDark});
 
   @override
   State<TodoPage> createState() => _TodoPageState();
@@ -114,8 +111,10 @@ class _TodoPageState extends State<TodoPage> {
   void initState() {
     super.initState();
     _currentTime = _getCurrentTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _currentTime = _getCurrentTime());
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _currentTime = _getCurrentTime();
+      });
     });
   }
 
@@ -125,7 +124,9 @@ class _TodoPageState extends State<TodoPage> {
     super.dispose();
   }
 
-  String _getCurrentTime() => DateFormat('HH:mm:ss').format(DateTime.now());
+  String _getCurrentTime() {
+    return DateFormat('HH:mm:ss').format(DateTime.now());
+  }
 
   void _addTask(String task) {
     if (task.isEmpty) return;
@@ -137,9 +138,11 @@ class _TodoPageState extends State<TodoPage> {
 
   void _toggleComplete(int index) {
     setState(() {
-      _completedTasks.contains(index)
-          ? _completedTasks.remove(index)
-          : _completedTasks.add(index);
+      if (_completedTasks.contains(index)) {
+        _completedTasks.remove(index);
+      } else {
+        _completedTasks.add(index);
+      }
     });
   }
 
@@ -147,28 +150,34 @@ class _TodoPageState extends State<TodoPage> {
     setState(() {
       _tasks.removeAt(index);
       _completedTasks.remove(index);
+      final newSet = <int>{};
+      for (var i in _completedTasks) {
+        newSet.add(i > index ? i - 1 : i);
+      }
       _completedTasks
-          .toList()
-          .asMap()
-          .forEach((i, v) => _completedTasks.remove(i > index ? i - 1 : i));
+        ..clear()
+        ..addAll(newSet);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final textFieldBg = widget.isDarkMode ? Colors.grey[800] : Colors.white;
-    final listBg = widget.isDarkMode ? Colors.grey[900] : Colors.white;
+    final isDark = widget.isDark;
+    final bgColor = isDark ? Colors.grey[850] : Colors.white;
+    final fieldColor = isDark ? Colors.grey[800] : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
 
-    return Padding(
+    return Container(
+      color: isDark ? Colors.black : Colors.grey[100],
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           Text(
             'Trenutno vreme: $_currentTime',
             style: TextStyle(
+              color: textColor,
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: widget.isDarkMode ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 16),
@@ -176,25 +185,21 @@ class _TodoPageState extends State<TodoPage> {
             controller: _controller,
             decoration: InputDecoration(
               filled: true,
-              fillColor: textFieldBg,
-              hintText: 'Dodaj novi zadatak',
-              hintStyle: TextStyle(
-                color: widget.isDarkMode ? Colors.white70 : Colors.black54,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              fillColor: fieldColor,
+              hintText: 'Dodaj novi zadatak...',
+              hintStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
               ),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add_circle_rounded, color: Colors.deepPurple),
                 onPressed: () => _addTask(_controller.text),
               ),
             ),
+            style: TextStyle(color: textColor),
             onSubmitted: _addTask,
-            style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : Colors.black,
-            ),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -204,12 +209,11 @@ class _TodoPageState extends State<TodoPage> {
                 final task = _tasks[index];
                 final isCompleted = _completedTasks.contains(index);
                 return Card(
-                  color: listBg,
-                  shadowColor: Colors.black26,
+                  color: bgColor,
                   elevation: 3,
-                  margin: const EdgeInsets.symmetric(vertical: 5),
+                  margin: const EdgeInsets.symmetric(vertical: 6),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: ListTile(
                     leading: Checkbox(
@@ -220,16 +224,14 @@ class _TodoPageState extends State<TodoPage> {
                     title: Text(
                       task,
                       style: TextStyle(
-                        color: widget.isDarkMode
-                            ? (isCompleted ? Colors.white54 : Colors.white)
-                            : (isCompleted ? Colors.black54 : Colors.black),
+                        color: textColor,
                         decoration: isCompleted
                             ? TextDecoration.lineThrough
                             : TextDecoration.none,
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      icon: const Icon(Icons.delete_rounded, color: Colors.redAccent),
                       onPressed: () => _deleteTask(index),
                     ),
                   ),
@@ -245,8 +247,8 @@ class _TodoPageState extends State<TodoPage> {
 
 // ================== NOTES PAGE ==================
 class NotesPage extends StatefulWidget {
-  final bool isDarkMode;
-  const NotesPage({super.key, required this.isDarkMode});
+  final bool isDark;
+  const NotesPage({super.key, required this.isDark});
 
   @override
   State<NotesPage> createState() => _NotesPageState();
@@ -262,8 +264,10 @@ class _NotesPageState extends State<NotesPage> {
   void initState() {
     super.initState();
     _currentTime = _getCurrentTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _currentTime = _getCurrentTime());
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _currentTime = _getCurrentTime();
+      });
     });
   }
 
@@ -273,7 +277,9 @@ class _NotesPageState extends State<NotesPage> {
     super.dispose();
   }
 
-  String _getCurrentTime() => DateFormat('HH:mm:ss').format(DateTime.now());
+  String _getCurrentTime() {
+    return DateFormat('HH:mm:ss').format(DateTime.now());
+  }
 
   void _addNote(String note) {
     if (note.isEmpty) return;
@@ -284,24 +290,29 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   void _deleteNote(int index) {
-    setState(() => _notes.removeAt(index));
+    setState(() {
+      _notes.removeAt(index);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final textFieldBg = widget.isDarkMode ? Colors.grey[800] : Colors.white;
-    final listBg = widget.isDarkMode ? Colors.grey[900] : Colors.white;
+    final isDark = widget.isDark;
+    final bgColor = isDark ? Colors.grey[850] : Colors.white;
+    final fieldColor = isDark ? Colors.grey[800] : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
 
-    return Padding(
+    return Container(
+      color: isDark ? Colors.black : Colors.grey[100],
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           Text(
             'Trenutno vreme: $_currentTime',
             style: TextStyle(
+              color: textColor,
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: widget.isDarkMode ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 16),
@@ -309,25 +320,21 @@ class _NotesPageState extends State<NotesPage> {
             controller: _noteController,
             decoration: InputDecoration(
               filled: true,
-              fillColor: textFieldBg,
-              hintText: 'Napiši belešku',
-              hintStyle: TextStyle(
-                color: widget.isDarkMode ? Colors.white70 : Colors.black54,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              fillColor: fieldColor,
+              hintText: 'Napiši belešku...',
+              hintStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
               ),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add_circle_rounded, color: Colors.deepPurple),
                 onPressed: () => _addNote(_noteController.text),
               ),
             ),
+            style: TextStyle(color: textColor),
             onSubmitted: _addNote,
-            style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : Colors.black,
-            ),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -336,22 +343,19 @@ class _NotesPageState extends State<NotesPage> {
               itemBuilder: (context, index) {
                 final note = _notes[index];
                 return Card(
-                  color: listBg,
-                  shadowColor: Colors.black26,
+                  color: bgColor,
                   elevation: 3,
-                  margin: const EdgeInsets.symmetric(vertical: 5),
+                  margin: const EdgeInsets.symmetric(vertical: 6),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: ListTile(
                     title: Text(
                       note,
-                      style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white : Colors.black,
-                      ),
+                      style: TextStyle(color: textColor),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      icon: const Icon(Icons.delete_rounded, color: Colors.redAccent),
                       onPressed: () => _deleteNote(index),
                     ),
                   ),

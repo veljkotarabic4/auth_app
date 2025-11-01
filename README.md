@@ -1,3 +1,5 @@
+![Flutter](https://img.shields.io/badge/Made_with-Flutter-blue?logo=flutter)
+
 # Note&Do App
 
 Jednostavna Flutter aplikacija sa login i register ekranima i glavnom početnom stranicom.
